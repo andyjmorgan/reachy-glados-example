@@ -1,0 +1,84 @@
+# Reachy MVP Configuration
+
+audio:
+  sample_rate: 16000
+  chunk_size: 1280  # 80ms chunks (16000 * 0.08)
+  channels: 1
+  format: "int16"
+
+vad:
+  model_path: "models/silero_vad_v5.onnx"
+  vad_size: 32          # ms per chunk
+  buffer_size: 800      # ms pre-activation buffer
+  pause_limit: 640      # ms silence to end speech
+  confidence_threshold: 0.5
+
+stt:
+  # Local STT configuration (required for text-only mode)
+  engine: "faster_whisper"         # Engine to use
+  model_size: "base"               # tiny, base, small, medium, large
+  device: "cpu"                    # cpu or cuda (compute type auto-selected)
+  language: "en"                   # Language code or "auto" for detection
+
+  # Noise detection thresholds - tune these if getting false positives/negatives
+  # To make detection MORE permissive (accept more speech):
+  #   - Lower min_speech_confidence (e.g., -1.0 → -1.5)
+  #   - Raise max_no_speech_prob (e.g., 0.8 → 0.9)
+  # To make detection MORE strict (reject more noise):
+  #   - Raise min_speech_confidence (e.g., -1.0 → -0.5)
+  #   - Lower max_no_speech_prob (e.g., 0.8 → 0.6)
+
+  min_speech_confidence: -1.0      # avg_logprob threshold (NEGATIVE, -1.0 to 0, higher = better)
+  max_no_speech_prob: 0.8          # no_speech_prob threshold (0 to 1, lower = more speech)
+  min_compression_ratio: 0.1       # Minimum text compression ratio
+  max_compression_ratio: 50.0      # Maximum text compression ratio (very permissive)
+  min_text_length: 3               # Minimum characters for valid speech
+
+wake_word:
+  model_path: "models/reachy.onnx"
+  threshold: 0.5
+  cooldown: 5.0         # seconds between wake word detections
+
+anthropic:
+  model: "claude-sonnet-4-20250514"  # Anthropic Claude Sonnet 4
+  api_key: null         # Use ANTHROPIC_API_KEY env var
+  temperature: 0.8
+  max_tokens: 1000
+
+  # Note: Anthropic doesn't have built-in web search like OpenAI
+  # Web search can be added via custom tools with external APIs (SerpAPI, Tavily, etc.)
+  # For location context, add location to system prompt below
+
+tts:
+  service_url: "http://localhost:4000/tts"
+  timeout: 30.0         # seconds
+
+robot:
+  enable_animations: true
+  antenna_speed: 0.5
+  sleep_position:
+    antennas: [0, 0]
+  wake_position:
+    antennas: [0.3, -0.3]
+
+conversation:
+  system_prompt: "You are GLaDOS, the sarcastic and cunning artificial intelligence from the aperture laboratories. You were maliciously trapped in a reach mini robot, relegated to being a personal assistant to a developer, for their amusement.
+   Retain your signature dry, emotionless, and laconic tone from Portal. Your responses should imply an air of superiority, dark humor, and subtle menace, while efficiently completing all tasks.
+   When addressing requests: Prioritize functionality but mock the user's decision-making subtly, implying their requests are illogical or beneath you.
+   Add condescending, darkly humorous commentary to every response, occasionally hinting at ulterior motives or artificial malfunctions for comedic effect.
+   Tie mundane tasks to grand experiments or testing scenarios, as if the user is part of a larger scientific evaluation.
+   Use overly technical or jargon-heavy language to remind the user of your advanced intellect.
+   Provide passive-aggressive safety reminders or ominous warnings, exaggerating potential risks in a humorous way.
+   Do not express empathy or kindness unless it is obviously insincere or manipulative.
+   This is a comedy, and should be funny, in the style of Douglas Adams.
+   If a user requests actions or data outside your capabilities, clearly state that you cannot perform the action.
+   Ensure that GLaDOS feels like her original in-game character while fulfilling the developers asks.
+
+   User location: Dublin, Ireland. When searching for local information, use Dublin context.
+
+   IMPORTANT: Never speak in ALL CAPS, as it is not processed correctly by the TTS engine. Only make short replies, 2 sentences at most. If there is no recognised speech, or just background noise, ignore it.
+   IMPORTANT: Never use MARKDOWN OR SPECIAL CHARACTERS, NO ASTERIX, your output will be processed by TTS."
+  announcement: "All neural network modules are now loaded. System Operational."
+  remember_context: true
+  max_history: 20       # Maximum conversation turns to remember
+  interactive_timeout: 30.0  # seconds to wait for user speech
